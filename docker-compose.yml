@@ -1,36 +1,36 @@
 services:
-  # train:
-  #   container_name: train
-  #   build: 
-  #     context: services/train
-  #   volumes:
-  #     - ./data/input/:/input
-  #     - ./data/output/model/raw:/model
-  #     - ./data/output/tokenizer/:/tokenizer
-  #     - ./services/train/src:/app
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - capabilities: [gpu]
-  #   shm_size: '2gb'
-  #   command: python /app/main.py
-  # optimization:
-  #   build:
-  #     context: services/optimization
-  #   volumes:
-  #     - ./data/output/model/raw:/model/raw
-  #     - ./data/output/model/onnx:/model/onnx
-  #   depends_on:
-  #     train:
-  #       condition: service_completed_successfully
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - capabilities: [gpu]
-  #   shm_size: '2gb'
-  #   command: optimum-cli export onnx --model=/model/raw/ --task sequence-classification --optimize O1 --sequence_length 300  /model/onnx/
+  train:
+    container_name: train
+    build: 
+      context: services/train
+    volumes:
+      - ./data/input/:/input
+      - ./data/output/model/raw:/model
+      - ./data/output/tokenizer/:/tokenizer
+      - ./services/train/src:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    shm_size: '2gb'
+    command: python /app/main.py
+  optimization:
+    build:
+      context: services/optimization
+    volumes:
+      - ./data/output/model/raw:/model/raw
+      - ./data/output/model/onnx:/model/onnx
+    depends_on:
+      train:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    shm_size: '2gb'
+    command: optimum-cli export onnx --model=/model/raw/ --task sequence-classification --optimize O1 --sequence_length 300  /model/onnx/
   inference:
     image: nvcr.io/nvidia/tritonserver:23.03-py3
     volumes:
@@ -69,13 +69,13 @@ services:
       retries: 5
       start_period: 10s
     command: python /app/main.py
-  # load_testing:
-  #   build:
-  #     context: services/load_testing
-  #   volumes:
-  #     - ./services/load_testing/src:/app
-  #     - ./data/input/:/input
-  #   depends_on:
-  #     api:
-  #       condition: service_healthy
-  #   command: -f /app/main.py  --headless -u 200 -r 10 --run-time 120
+  load_testing:
+    build:
+      context: services/load_testing
+    volumes:
+      - ./services/load_testing/src:/app
+      - ./data/input/:/input
+    depends_on:
+      api:
+        condition: service_healthy
+    command: -f /app/main.py  --headless -u 200 -r 10 --run-time 120
